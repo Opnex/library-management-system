@@ -56,6 +56,7 @@ function displayBooks() {
       if (book.isAvailable) {
         userBookList.appendChild(bookCard);
       }
+      
       // Display in borrowed list if borrowed by current user
       if (!book.isAvailable && book.borrowedBy === currentUser.username) {
         const borrowedCard = createBookCard(book, true);
