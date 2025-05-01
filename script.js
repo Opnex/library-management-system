@@ -56,7 +56,7 @@ function displayBooks() {
       if (book.isAvailable) {
         userBookList.appendChild(bookCard);
       }
-      
+
       // Display in borrowed list if borrowed by current user
       if (!book.isAvailable && book.borrowedBy === currentUser.username) {
         const borrowedCard = createBookCard(book, true);
@@ -239,7 +239,7 @@ async function updateUI() {
   const librarianDashboard = document.getElementById('librarianDashboard');
   const welcomeMessage = document.getElementById('welcomeMessage');
 
-  // const libraryData = await loadLibraryData(); // Load users as well
+  const libraryData = await loadLibraryData(); // Load users as well
 
   if (currentUser) {
     if (heroSection) heroSection.style.display = 'none';
@@ -263,16 +263,14 @@ async function updateUI() {
 // Handle login
 document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
-  // const role = document.getElementById('loginRole').value;
   const username = document.getElementById('loginUsername').value.trim();
   const password = document.getElementById('loginPassword').value;
   const loginError = document.getElementById('loginError');
 
   const libraryData = await loadLibraryData();
-  const users = JSON.parse(localStorage.getItem('users')) || []; // Directly get users from localStorage
+  const users = JSON.parse(localStorage.getItem('users')) || [];
   const user = users.find(u => u.username === username
     && u.password === password
-    // && u.role === role
   );
 
   if (user) {
