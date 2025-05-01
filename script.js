@@ -20,13 +20,11 @@ async function loadLibraryData() {
       books = JSON.parse(localStorage.getItem('books'));
     }
     if (users.length === 0) {
-      // users = data.users
       console.log(users);
 
     localStorage.setItem('users', JSON.stringify(data.users));
     
     }
-    // return data;
   } catch (error) {
     console.error('Error loading library data:', error);
     localStorage.setItem('books', JSON.stringify([]));
@@ -68,11 +66,6 @@ function displayBooks() {
     }
   });
 
-  // Initialize tooltips
-  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
-    new bootstrap.Tooltip(el);
-  });
-
   // Search functionality
   document.getElementById('searchButton')?.addEventListener('click', () => {
     const searchTerm = document.getElementById('searchInput')?.value.trim().toLowerCase() || '';
@@ -100,8 +93,8 @@ function displayBooks() {
   }
 }
 
-// Create book card element
-function createBookCard(book, isBorrowed = false) {
+// Create book card element ()
+function createBookCard(book) {
   const bookCard = document.createElement('div');
   bookCard.className = `book-card ${book.isAvailable ? '' : 'not-available'}`;
   
@@ -212,8 +205,7 @@ function handleBookAction(bookId, action) {
   }
 }
 
-
-//Section for Alert function
+//Section for notification function
 function showAlert(message, type = 'info') {
   const alertContainer = document.getElementById('alertContainer');
   if (!alertContainer) {
@@ -231,14 +223,12 @@ function showAlert(message, type = 'info') {
 
   alertContainer.appendChild(alert);
 
-  // Auto-dismiss after 5 seconds
+  // Auto-dismiss after 3 seconds
   setTimeout(() => {
     alert.classList.remove('show');
-    setTimeout(() => alert.remove(), 150);
-  }, 5000);
+    setTimeout(() => alert.remove(), 100);
+  }, 3000);
 }
-
-
 
 // Show/hide sections based on login state
 async function updateUI() {
@@ -248,7 +238,7 @@ async function updateUI() {
   const librarianDashboard = document.getElementById('librarianDashboard');
   const welcomeMessage = document.getElementById('welcomeMessage');
 
-  const libraryData = await loadLibraryData(); // Load users as well
+  // const libraryData = await loadLibraryData(); // Load users as well
 
   if (currentUser) {
     if (heroSection) heroSection.style.display = 'none';
