@@ -24,17 +24,6 @@ body {
   color: #2c3e50;
 }
 
-.navbar-nav .nav-link {
-  color: #2c3e50;
-  font-size: 1rem;
-  margin-left: 15px;
-  transition: color 0.3s ease;
-}
-
-.navbar-nav .nav-link:hover {
-  color: #007bff;
-}
-
 #logoutButton {
   margin-left: 15px;
 }
@@ -89,21 +78,11 @@ body {
   transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
-.btn-user {
-  background-color: #28a745;
-  border-color: #28a745;
-}
-
-.btn-librarian {
-  background-color: #007bff;
-  border-color: #007bff;
-}
-
 .btn-login:hover {
   transform: scale(1.05);
 }
 
-/* Login Modal */
+/* Modal Styles */
 .modal-content {
   border-radius: 10px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
@@ -118,22 +97,6 @@ body {
 
 .modal-title {
   font-size: 1.5rem;
-}
-
-.form-control {
-  border-radius: 5px;
-  font-size: 1rem;
-}
-
-.btn-primary {
-  background-color: #2c3e50;
-  border-color: #2c3e50;
-  transition: background-color 0.3s ease;
-}
-
-.btn-primary:hover {
-  background-color: #34495e;
-  border-color: #34495e;
 }
 
 /* Dashboard Section */
@@ -151,46 +114,6 @@ body {
   color: #2c3e50;
   margin-bottom: 20px;
   text-align: center;
-}
-
-/* Search Input and Buttons */
-#searchInput {
-  width: 100%;
-  max-width: 600px;
-  padding: 10px;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  margin: 20px auto;
-  display: block;
-}
-
-#searchButton, #clearSearch {
-  padding: 10px 20px;
-  font-size: 1rem;
-  border-radius: 5px;
-  margin: 0 5px;
-  transition: background-color 0.3s ease;
-}
-
-#searchButton {
-  background-color: #007bff;
-  border-color: #007bff;
-  color: #fff;
-}
-
-#searchButton:hover {
-  background-color: #0056b3;
-}
-
-#clearSearch {
-  background-color: #6c757d;
-  border-color: #6c757d;
-  color: #fff;
-}
-
-#clearSearch:hover {
-  background-color: #5a6268;
 }
 
 /* Book Cards */
@@ -249,8 +172,8 @@ body {
   opacity: 0.7;
 }
 
-/* User Dashboard */
-#userBookList, #borrowedBooksList {
+/* Book Lists */
+#userBookList, #borrowedBooksList, #librarianBookList {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
@@ -277,32 +200,59 @@ body {
   margin-bottom: 30px;
 }
 
-#addBookForm .form-control {
-  font-size: 0.9rem;
-}
-
-#librarianBookList {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-}
-
-
+/* Borrow Dates */
 .borrow-dates {
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px solid #eee;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #eee;
 }
 
 .borrow-dates small {
-    display: block;
-    font-size: 0.8rem;
-    color: #666;
+  display: block;
+  font-size: 0.8rem;
+  color: #666;
 }
 
-.not-available {
-    opacity: 0.8;
-    background-color: #f8f9fa;
+/* Alert Container */
+.alert-container {
+  position: fixed;
+  top: 20px;
+  right: 500px;
+  z-index: 1100;
+  max-width: 350px;
+}
+
+.alert {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-left: 4px solid transparent;
+}
+
+.alert.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.alert-success {
+  border-left-color: #198754;
+}
+
+.alert-warning {
+  border-left-color: #ffc107;
+}
+
+.alert-danger {
+  border-left-color: #dc3545;
+}
+
+.alert-info {
+  border-left-color: #0dcaf0;
+}
+
+.alert .btn-close {
+  padding: 0.75rem 1rem;
 }
 
 /* Responsive Adjustments */
@@ -315,12 +265,6 @@ body {
     font-size: 1rem;
   }
 
-  .btn-login {
-    font-size: 1rem;
-    padding: 8px 15px;
-    margin: 5px;
-  }
-
   .dashboard-container {
     margin: 60px 20px 20px;
     padding: 15px;
@@ -330,15 +274,6 @@ body {
     font-size: 1.5rem;
   }
 
-  #searchInput {
-    max-width: 100%;
-  }
-
-  #searchButton, #clearSearch {
-    width: 100%;
-    margin: 5px 0;
-  }
-
   #userBookList, #borrowedBooksList, #librarianBookList {
     grid-template-columns: 1fr;
   }
@@ -346,25 +281,11 @@ body {
   .book-card img {
     max-width: 120px;
   }
-
-  #addBookForm .row {
-    flex-direction: column;
-  }
-
-  #addBookForm .col-md-3, #addBookForm .col-md-12 {
-    width: 100%;
-    margin-bottom: 10px;
-  }
 }
 
 @media (max-width: 576px) {
   .navbar-brand {
     font-size: 1.2rem;
-  }
-
-  .navbar-nav .nav-link {
-    font-size: 0.9rem;
-    margin-left: 10px;
   }
 
   .hero-content h1 {
@@ -377,13 +298,5 @@ body {
 
   .modal-title {
     font-size: 1.2rem;
-  }
-
-  .book-info strong {
-    font-size: 1rem;
-  }
-
-  .book-info p {
-    font-size: 0.9rem;
   }
 }

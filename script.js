@@ -182,6 +182,7 @@ function handleBookAction(bookId, action) {
     saveBooks();
     displayBooks();
     showAlert(`You borrowed "${book.title}". Due on ${dueDate.toLocaleDateString()}`, 'success');
+
   } else if (action === 'return' && !book.isAvailable && book.borrowedBy === currentUser.username) {
     book.isAvailable = true;
     delete book.borrowedBy;
@@ -190,6 +191,7 @@ function handleBookAction(bookId, action) {
     saveBooks();
     displayBooks();
     showAlert(`You have successfully returned "${book.title}".`, 'warning');
+
   } else if (action === 'delete' && currentUser?.role === 'librarian') {
     if (confirm('Are you sure you want to delete this book?')) {
       books = books.filter(b => b.id !== bookId);
@@ -199,6 +201,34 @@ function handleBookAction(bookId, action) {
     }
   }
 }
+
+
+//Section for Alert function
+function showAlert(message, type = 'info') {
+  const alertContainer = document.getElementById('alertContainer');
+  if (!alertContainer) {
+    console.warn('Alert container not found');
+    return;
+  }
+
+  const alert = document.createElement('div');
+  alert.className = `alert alert-${type} alert-dismissible fade show`;
+  alert.role = 'alert';
+  alert.innerHTML = `
+    ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  `;
+
+  alertContainer.appendChild(alert);
+
+  // Auto-dismiss after 5 seconds
+  setTimeout(() => {
+    alert.classList.remove('show');
+    setTimeout(() => alert.remove(), 150);
+  }, 5000);
+}
+
+
 
 // Show/hide sections based on login state
 async function updateUI() {

@@ -17,7 +17,6 @@
             <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <!-- <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#loginModal">Login</a> -->
                     </li>
                     <button class="btn btn-secondary mt-3" id="logoutButton">Logout</button>
                 </ul>
@@ -53,7 +52,6 @@
                             <label for="loginPassword" class="form-label">Password</label>
                             <input type="password" id="loginPassword" class="form-control">
                         </div>
-                  
                         <button type="submit" class="btn btn-primary w-100">Login</button>
                     </form>
                     <p id="loginError" class="text-danger text-center mt-2" style="display: none;"></p>
@@ -95,11 +93,18 @@
 
     <div class="dashboard-container" id="dashboardSection">
         <h2 id="welcomeMessage"></h2>
-        <div id="alertContainer" style="margin-top: 20px;"></div>
 
-        <input id="searchInput" type="text" placeholder="Search by title, author, or genre">
-        <button id="searchButton">Search</button>
-        <button id="clearSearch">Clear Search</button>
+        <div class="row mb-3">
+            <div class="col-md-8">
+                <input id="searchInput" type="text" class="form-control" placeholder="Search by title, author, or genre">
+            </div>
+            <div class="col-md-2">
+                <button id="searchButton" class="btn btn-primary w-100">Search</button>
+            </div>
+            <div class="col-md-2">
+                <button id="clearSearch" class="btn btn-secondary w-100">Clear</button>
+            </div>
+        </div>
 
         <div id="userDashboard" style="display: none;">
             <h3>Your Library</h3>
@@ -132,6 +137,10 @@
             </form>
             <div id="librarianBookList"></div>
         </div>
+    </div> <!-- Closing dashboard-container -->
+
+    <!-- Single Alert Container (moved outside dashboard-container) -->
+    <div id="alertContainer" class="alert-container"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="script.js"></script>
