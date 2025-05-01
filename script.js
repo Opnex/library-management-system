@@ -1,22 +1,32 @@
 // Initialize state
 let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
 let books = JSON.parse(localStorage.getItem('books')) || [];
+let users =  JSON.parse(localStorage.getItem('users')) || [];
+
 
 // Load data from JSON
 async function loadLibraryData() {
   try {
     const response = await fetch('library-data.json');
     const data = await response.json();
-    if (!localStorage.getItem('books')) {
+    console.log(data,9);
+    
+    if (books.length === 0) {
       books = data.books;
+      console.log(books);
+      
       localStorage.setItem('books', JSON.stringify(books));
     } else {
       books = JSON.parse(localStorage.getItem('books'));
     }
-    if (!localStorage.getItem('users')) {
-      localStorage.setItem('users', JSON.stringify(data.users));
+    if (users.length === 0) {
+      // users = data.users
+      console.log(users);
+
+    localStorage.setItem('users', JSON.stringify(data.users));
+    
     }
-    return data;
+    // return data;
   } catch (error) {
     console.error('Error loading library data:', error);
     localStorage.setItem('books', JSON.stringify([]));
