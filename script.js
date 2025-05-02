@@ -238,6 +238,7 @@ async function updateUI() {
   const userDashboard = document.getElementById('userDashboard');
   const librarianDashboard = document.getElementById('librarianDashboard');
   const welcomeMessage = document.getElementById('welcomeMessage');
+  const logoutButton = document.getElementById('logoutButton'); 
 
 // Load users as well
   const libraryData = await loadLibraryData(); 
@@ -252,12 +253,16 @@ async function updateUI() {
     if (librarianDashboard) {
       librarianDashboard.style.display = currentUser.role === 'librarian' ? 'block' : 'none';
     }
+
+    if (logoutButton) logoutButton.style.display = 'block';
+
     displayBooks();
   } else {
     if (heroSection) heroSection.style.display = 'flex';
     if (dashboardSection) dashboardSection.style.display = 'none';
     if (userDashboard) userDashboard.style.display = 'none';
     if (librarianDashboard) librarianDashboard.style.display = 'none';
+    if (logoutButton) logoutButton.style.display = 'none';
   }
 }
 
