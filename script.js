@@ -176,7 +176,7 @@ function handleBookAction(bookId, action) {
   if (action === 'borrow' && book.isAvailable) {
     const now = new Date();
     const dueDate = new Date(now);
-    dueDate.setDate(now.getDate() + 14); // Due in 14 days
+    dueDate.setDate(now.getDate() + 14);
   
     book.isAvailable = false;
     book.borrowedBy = currentUser.username;
@@ -239,7 +239,8 @@ async function updateUI() {
   const librarianDashboard = document.getElementById('librarianDashboard');
   const welcomeMessage = document.getElementById('welcomeMessage');
 
-  const libraryData = await loadLibraryData(); // Load users as well
+// Load users as well
+  const libraryData = await loadLibraryData(); 
 
   if (currentUser) {
     if (heroSection) heroSection.style.display = 'none';
@@ -315,15 +316,15 @@ document.getElementById('registerForm')?.addEventListener('submit', async (e) =>
   }
 
   const newUser = { username: username, password: password, role: 'user' };
-  users.push(newUser); // Add the new user to the local array FIRST
-  localStorage.setItem('users', JSON.stringify(users)); // THEN save the updated array to localStorage
+  users.push(newUser);
+  localStorage.setItem('users', JSON.stringify(users));
 
   if (registerError) registerError.style.display = 'none';
   const registerModal = document.getElementById('registerModal');
   if (registerModal) bootstrap.Modal.getInstance(registerModal)?.hide();
   showAlert('Registration successful! You can now log in.', 'success');
 
-  // Optionally, automatically switch back to the login modal
+  // Automatically switch back to the login modal
   const loginModal = document.getElementById('loginModal');
   if (loginModal) {
     const bsLoginModal = bootstrap.Modal.getOrCreateInstance(loginModal);
