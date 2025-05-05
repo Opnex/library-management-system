@@ -1,29 +1,50 @@
 // Initialize state
 let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
 let books = JSON.parse(localStorage.getItem('books')) || [];
-let users =  JSON.parse(localStorage.getItem('users')) || [];
+let users = JSON.parse(localStorage.getItem('users')) || [];
 
+// Store all borrowing histories in localStorage
+function storeAllBorrowingHistories() {
+  const allHistories = {};
+
+  books.forEach(book => {
+    if (book.borrowHistory) {
+      book.borrowHistory.forEach(entry => {
+        if (!allHistories[entry.user]) {
+          allHistories[entry.user] = [];
+        }
+        allHistories[entry.user].push({
+          bookTitle: book.title,
+          borrowDate: entry.borrowDate,
+          returnDate: entry.returnDate || null,
+        });
+      });
+    }
+  });
+
+  localStorage.setItem('allBorrowingHistories', JSON.stringify(allHistories));
+}
 
 // Load data from JSON
 async function loadLibraryData() {
   try {
     const response = await fetch('library-data.json');
     const data = await response.json();
-    console.log(data,9);
     
     if (books.length === 0) {
       books = data.books;
-      console.log(books);
-      
       localStorage.setItem('books', JSON.stringify(books));
     } else {
       books = JSON.parse(localStorage.getItem('books'));
     }
-    if (users.length === 0) {
-      console.log(users);
-
-    localStorage.setItem('users', JSON.stringify(data.users));
     
+    if (users.length === 0) {
+      localStorage.setItem('users', JSON.stringify(data.users));
+    }
+
+    // Initialize borrowing histories if they don't exist
+    if (!localStorage.getItem('allBorrowingHistories')) {
+      storeAllBorrowingHistories();
     }
   } catch (error) {
     console.error('Error loading library data:', error);
@@ -38,6 +59,110 @@ function saveBooks() {
   localStorage.setItem('books', JSON.stringify(books));
 }
 
+// Display borrowing history
+function displayBorrowingHistory() {
+  const historySection = document.getElementById('borrowingHistory');
+  if (!historySection) return;
+
+  // Clear previous content
+  historySection.innerHTML = '';
+
+  // For regular users: Show their own history
+  if (currentUser?.role === 'user') {
+    const userHistory = books
+      .filter(book => book.borrowHistory?.some(entry => entry.user === currentUser.username))
+      .flatMap(book => 
+        book.borrowHistory
+          .filter(entry => entry.user === currentUser.username)
+          .map(entry => ({
+            title: book.title,
+            ...entry
+          }))
+      )
+      .sort((a, b) => new Date(b.borrowDate) - new Date(a.borrowDate));
+
+    const historyHTML = `
+      <div class="history-section-header">
+        <h3>Your Borrowing History</h3>
+      </div>
+      ${userHistory.length === 0 ? 
+        '<p class="text-muted">No borrowing history found</p>' : 
+        `<div class="table-responsive">
+          <table class="table table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Book</th>
+                <th>Borrowed</th>
+                <th>Returned</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${userHistory.map(entry => `
+                <tr>
+                  <td>${entry.title}</td>
+                  <td>${new Date(entry.borrowDate).toLocaleDateString()}</td>
+                  <td>${entry.returnDate ? new Date(entry.returnDate).toLocaleDateString() : '-'}</td>
+                  <td><span class="badge ${entry.returnDate ? 'bg-success' : 'bg-warning'}">${
+                    entry.returnDate ? 'Returned' : 'Not returned'
+                  }</span></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>`
+      }
+    `;
+    
+    historySection.innerHTML = historyHTML;
+  }
+  // For librarians: Show ALL users' histories
+  else if (currentUser?.role === 'librarian') {
+    const allHistories = JSON.parse(localStorage.getItem('allBorrowingHistories')) || {};
+    
+    const historyHTML = `
+      <div class="history-section-header">
+        <h3>All Users' Borrowing Histories</h3>
+      </div>
+      <div class="librarian-history-view">
+        ${Object.keys(allHistories).length === 0 ? 
+          '<p class="text-muted">No borrowing histories found.</p>' : 
+          Object.entries(allHistories).map(([user, entries]) => `
+            <div class="user-history mb-4">
+              <h5 class="user-history-header">${user}</h5>
+              <div class="table-responsive">
+                <table class="table table-sm table-striped">
+                  <thead>
+                    <tr>
+                      <th>Book</th>
+                      <th>Borrowed</th>
+                      <th>Returned</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${entries.map(entry => `
+                      <tr>
+                        <td>${entry.bookTitle}</td>
+                        <td>${new Date(entry.borrowDate).toLocaleDateString()}</td>
+                        <td>${entry.returnDate ? new Date(entry.returnDate).toLocaleDateString() : '-'}</td>
+                        <td><span class="badge ${
+                          entry.returnDate ? 'bg-success' : 'bg-warning'
+                        }">${entry.returnDate ? 'Returned' : 'Not returned'}</span></td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `).join('')}
+      </div>
+    `;
+    
+    historySection.innerHTML = historyHTML;
+  }
+}
+
 // Display books for user or librarian
 function displayBooks() {
   const userBookList = document.getElementById('userBookList');
@@ -48,8 +173,17 @@ function displayBooks() {
   const borrowedBooksList = document.getElementById('borrowedBooksList');
   if (borrowedBooksList) borrowedBooksList.innerHTML = '';
 
-  // Display available books
-  books.forEach(book => {
+  // Sort books - available first, then by title
+  const sortedBooks = [...books].sort((a, b) => {
+    // Available books first
+    if (a.isAvailable && !b.isAvailable) return -1;
+    if (!a.isAvailable && b.isAvailable) return 1;
+    // Then sort by title
+    return a.title.localeCompare(b.title);
+  });
+
+  // Display sorted books
+  sortedBooks.forEach(book => {
     const bookCard = createBookCard(book);
     
     if (currentUser?.role === 'user' && userBookList) {
@@ -57,7 +191,6 @@ function displayBooks() {
         userBookList.appendChild(bookCard);
       }
 
-      // Display in borrowed list if borrowed by current user
       if (!book.isAvailable && book.borrowedBy === currentUser.username) {
         const borrowedCard = createBookCard(book, true);
         borrowedBooksList.appendChild(borrowedCard);
@@ -92,30 +225,48 @@ function displayBooks() {
     );
     myBorrowedBooks.style.display = hasBorrowedBooks ? 'block' : 'none';
   }
+
+  // Display history AFTER books (with slight delay to ensure DOM is ready)
+  setTimeout(() => displayBorrowingHistory(), 0);
 }
 
-// Create book card element ()
-function createBookCard(book) {
+// Create book card element
+function createBookCard(book, isBorrowed = false) {
   const bookCard = document.createElement('div');
-  bookCard.className = `book-card ${book.isAvailable ? '' : 'not-available'}`;
+  bookCard.className = `book-card ${book.isAvailable ? 'available' : 'not-available'} ${
+    isBorrowed ? 'borrowed-card' : ''
+  }`;
   
   const borrowDate = book.borrowDate ? new Date(book.borrowDate) : null;
   const dueDate = book.dueDate ? new Date(book.dueDate) : null;
   
   bookCard.innerHTML = `
-    <img src="${book.coverImage}" alt="${book.title} cover"
-      onerror="this.src='https://images.unsplash.com/photo-1544716278-ca5e3f4ebf0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80'">
+    <div class="book-image-container">
+      <img src="${book.coverImage}" alt="${book.title} cover" class="book-cover"
+        onerror="this.src='https://images.unsplash.com/photo-1544716278-ca5e3f4ebf0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80'">
+      ${!book.isAvailable ? `
+        <span class="book-status-badge">Borrowed</span>
+      ` : ''}
+    </div>
     <div class="book-info">
-      <strong>${book.title}</strong>
-      <p>by ${book.author}</p>
-      <p>Genre: ${book.genre}</p>
-      <span class="badge ${book.isAvailable ? 'bg-success' : 'bg-danger'}">
-        ${book.isAvailable ? 'Available' : 'Borrowed'}
-      </span>
+      <h4 class="book-title">${book.title}</h4>
+      <p class="book-author">by ${book.author}</p>
+      <div class="book-meta">
+        <span class="book-genre">${book.genre}</span>
+        <span class="badge ${book.isAvailable ? 'bg-success' : 'bg-danger'}">
+          ${book.isAvailable ? 'Available' : 'Borrowed'}
+        </span>
+      </div>
       ${!book.isAvailable && borrowDate && dueDate ? `
         <div class="borrow-dates">
-          <small>Borrowed: ${borrowDate.toLocaleDateString()}</small>
-          <small>Due: ${dueDate.toLocaleDateString()}</small>
+          <div class="date-item">
+            <span class="date-label">Borrowed:</span>
+            <span class="date-value">${borrowDate.toLocaleDateString()}</span>
+          </div>
+          <div class="date-item">
+            <span class="date-label">Due:</span>
+            <span class="date-value">${dueDate.toLocaleDateString()}</span>
+          </div>
         </div>
       ` : ''}
     </div>
@@ -130,7 +281,7 @@ function createBookCard(book) {
         <button class="btn btn-sm btn-danger"
           onclick="handleBookAction(${book.id}, 'delete')"
           data-bs-toggle="tooltip" title="Delete this book">
-          Delete
+          <i class="bi bi-trash"></i>
         </button>
       ` : ''}
     </div>
@@ -149,11 +300,18 @@ function displaySearchResults(filteredBooks) {
   borrowedBooksList.innerHTML = '';
 
   if (filteredBooks.length === 0) {
-    userBookList.innerHTML = '<p>No books found.</p>';
+    userBookList.innerHTML = '<p class="text-muted">No books found matching your search.</p>';
     return;
   }
 
-  filteredBooks.forEach(book => {
+  // Sort search results - available first
+  const sortedResults = [...filteredBooks].sort((a, b) => {
+    if (a.isAvailable && !b.isAvailable) return -1;
+    if (!a.isAvailable && b.isAvailable) return 1;
+    return 0;
+  });
+
+  sortedResults.forEach(book => {
     const bookCard = createBookCard(book);
     
     if (currentUser?.role === 'user' && userBookList) {
@@ -173,6 +331,21 @@ function handleBookAction(bookId, action) {
   const book = books.find(b => b.id === bookId);
   if (!book) return;
 
+  if (action === 'delete' && currentUser?.role === 'librarian') {
+    if (!book.isAvailable) {
+      showAlert(`Cannot delete "${book.title}" because it's currently borrowed.`, 'danger');
+      return;
+    }
+    if (confirm('Are you sure you want to delete this book?')) {
+      books = books.filter(b => b.id !== bookId);
+      saveBooks();
+      storeAllBorrowingHistories();
+      displayBooks();
+      showAlert(`"${book.title}" has been deleted from the library.`, 'danger');
+    }
+    return;
+  }
+
   if (action === 'borrow' && book.isAvailable) {
     const now = new Date();
     const dueDate = new Date(now);
@@ -182,31 +355,41 @@ function handleBookAction(bookId, action) {
     book.borrowedBy = currentUser.username;
     book.borrowDate = now.toISOString();
     book.dueDate = dueDate.toISOString();
+    
+    if (!book.borrowHistory) book.borrowHistory = [];
+    book.borrowHistory.push({
+      user: currentUser.username,
+      borrowDate: now.toISOString()
+    });
   
     saveBooks();
+    storeAllBorrowingHistories();
     displayBooks();
     showAlert(`You borrowed "${book.title}". Due on ${dueDate.toLocaleDateString()}`, 'success');
-
-  } else if (action === 'return' && !book.isAvailable && book.borrowedBy === currentUser.username) {
+  }
+  else if (action === 'return' && !book.isAvailable && book.borrowedBy === currentUser.username) {
     book.isAvailable = true;
+    
+    // Update history
+    const historyEntry = book.borrowHistory?.find(
+      entry => entry.user === currentUser.username && !entry.returnDate
+    );
+    if (historyEntry) {
+      historyEntry.returnDate = new Date().toISOString();
+    }
+    
     delete book.borrowedBy;
     delete book.borrowDate;
     delete book.dueDate;
+    
     saveBooks();
+    storeAllBorrowingHistories();
     displayBooks();
     showAlert(`You have successfully returned "${book.title}".`, 'warning');
-
-  } else if (action === 'delete' && currentUser?.role === 'librarian') {
-    if (confirm('Are you sure you want to delete this book?')) {
-      books = books.filter(b => b.id !== bookId);
-      saveBooks();
-      displayBooks();
-      showAlert(`"${book.title}" has been deleted from the library.`, 'danger');
-    }
   }
 }
 
-//Section for notification function
+// Show alert notification
 function showAlert(message, type = 'info') {
   const alertContainer = document.getElementById('alertContainer');
   if (!alertContainer) {
@@ -238,10 +421,11 @@ async function updateUI() {
   const userDashboard = document.getElementById('userDashboard');
   const librarianDashboard = document.getElementById('librarianDashboard');
   const welcomeMessage = document.getElementById('welcomeMessage');
-  const logoutButton = document.getElementById('logoutButton'); 
+  const logoutButton = document.getElementById('logoutButton');
+  const historySection = document.getElementById('borrowingHistory');
 
-// Load users as well
-  const libraryData = await loadLibraryData(); 
+  // Load users and books
+  await loadLibraryData();
 
   if (currentUser) {
     if (heroSection) heroSection.style.display = 'none';
@@ -253,9 +437,9 @@ async function updateUI() {
     if (librarianDashboard) {
       librarianDashboard.style.display = currentUser.role === 'librarian' ? 'block' : 'none';
     }
-
     if (logoutButton) logoutButton.style.display = 'block';
 
+    // Only display books and history when logged in
     displayBooks();
   } else {
     if (heroSection) heroSection.style.display = 'flex';
@@ -263,6 +447,7 @@ async function updateUI() {
     if (userDashboard) userDashboard.style.display = 'none';
     if (librarianDashboard) librarianDashboard.style.display = 'none';
     if (logoutButton) logoutButton.style.display = 'none';
+    if (historySection) historySection.innerHTML = ''; // Clear borrowing history on landing page
   }
 }
 
@@ -273,11 +458,8 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
   const password = document.getElementById('loginPassword').value;
   const loginError = document.getElementById('loginError');
 
-  const libraryData = await loadLibraryData();
   const users = JSON.parse(localStorage.getItem('users')) || [];
-  const user = users.find(u => u.username === username
-    && u.password === password
-  );
+  const user = users.find(u => u.username === username && u.password === password);
 
   if (user) {
     currentUser = user;
@@ -287,7 +469,6 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
     if (loginModal) bootstrap.Modal.getInstance(loginModal)?.hide();
     updateUI();
   } else {
-    
     if (loginError) {
       loginError.textContent = 'Invalid username or password.';
       loginError.style.display = 'block';
@@ -337,7 +518,6 @@ document.getElementById('registerForm')?.addEventListener('submit', async (e) =>
   }
 });
 
-
 // Handle add book form
 document.getElementById('addBookForm')?.addEventListener('submit', (e) => {
   e.preventDefault();
@@ -350,7 +530,15 @@ document.getElementById('addBookForm')?.addEventListener('submit', (e) => {
 
   if (title && author && genre) {
     const newId = books.length ? Math.max(...books.map(b => b.id)) + 1 : 1;
-    books.push({ id: newId, title, author, genre, isAvailable: true, coverImage });
+    books.push({ 
+      id: newId, 
+      title, 
+      author, 
+      genre, 
+      isAvailable: true, 
+      coverImage,
+      borrowHistory: [] 
+    });
     saveBooks();
     displayBooks();
     showAlert(`"${title}" has been added to the library.`, 'success');

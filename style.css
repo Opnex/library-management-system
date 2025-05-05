@@ -31,13 +31,15 @@ body {
 /* Hero Section */
 .hero-section {
   position: relative;
-  height: 100vh;
+  min-height: 100vh;
   background: url(/image/landing2.jpeg) no-repeat center center/cover;
+  background-attachment: fixed; /* Fix background during scroll */
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
   color: #fff;
+  overflow: hidden; /* Prevent overflow */
 }
 
 .hero-overlay {
@@ -54,6 +56,7 @@ body {
   position: relative;
   z-index: 2;
   padding: 20px;
+  max-width: 800px;
 }
 
 .hero-content h1 {
@@ -118,42 +121,76 @@ body {
 
 /* Book Cards */
 .book-card {
+  display: flex;
+  flex-direction: column;
   background-color: #fff;
   border: 1px solid #ddd;
   border-radius: 10px;
   padding: 15px;
   margin-bottom: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  max-width: 100%;
 }
 
 .book-card:hover {
   transform: translateY(-5px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
 
-.book-card img {
+.book-image-container {
+  position: relative;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.book-cover {
+  width: 100%;
   max-width: 150px;
   height: auto;
   border-radius: 5px;
-  margin-bottom: 10px;
+}
+
+.book-status-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.85em;
 }
 
 .book-info {
   flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.book-info strong {
-  font-size: 1.2rem;
+.book-title {
+  font-size: 1.3rem;
   color: #2c3e50;
+  margin: 0;
 }
 
-.book-info p {
-  margin: 5px 0;
+.book-author {
+  font-size: 1rem;
   color: #555;
+  margin: 0;
+}
+
+.book-meta {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.book-genre {
+  font-size: 0.9rem;
+  color: #666;
 }
 
 .badge {
@@ -162,10 +199,82 @@ body {
   border-radius: 5px;
 }
 
+.badge.bg-success {
+  background-color: #28a745 !important;
+}
+
+.badge.bg-danger {
+  background-color: #dc3545 !important;
+}
+
+.badge.bg-warning {
+  background-color: #ffc107 !important;
+}
+
+.borrow-dates {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #eee;
+}
+
+.date-item {
+  display: flex;
+  gap: 5px;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.date-label {
+  font-weight: bold;
+}
+
+.date-value {
+  color: #333;
+}
+
+.book-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
 .book-actions .btn {
   font-size: 0.9rem;
-  padding: 5px 15px;
+  padding: 6px 12px;
   border-radius: 5px;
+  transition: background-color 0.2s ease;
+  flex: 1;
+  text-align: center;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 10px;
+}
+
+.btn-danger i.bi-trash {
+  font-size: 1rem;
+}
+
+.btn-danger::after {
+  content: "Delete";
+  font-size: 0.9rem;
 }
 
 .not-available {
@@ -175,14 +284,14 @@ body {
 /* Book Lists */
 #userBookList, #borrowedBooksList, #librarianBookList {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
 }
 
 #myBorrowedBooks {
   font-size: 1.5rem;
   color: #2c3e50;
-  margin-top: 40px;
+  margin-top: 1.5rem;
   margin-bottom: 20px;
 }
 
@@ -200,24 +309,11 @@ body {
   margin-bottom: 30px;
 }
 
-/* Borrow Dates */
-.borrow-dates {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid #eee;
-}
-
-.borrow-dates small {
-  display: block;
-  font-size: 0.8rem;
-  color: #666;
-}
-
 /* Alert Container */
 .alert-container {
   position: fixed;
   top: 20px;
-  right: 500px;
+  right: 20px; /* More responsive than 500px */
   z-index: 1100;
   max-width: 350px;
 }
@@ -255,10 +351,103 @@ body {
   padding: 0.75rem 1rem;
 }
 
+/* Borrowing History Styling */
+.hero-section #borrowingHistory {
+  display: none !important;
+}
+
+#borrowingHistory {
+  background: #fff;
+  border-radius: 10px;
+  padding: 25px;
+  margin-top: 40px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+}
+
+.history-section-header {
+  border-bottom: 2px solid #f1f3f5;
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+}
+
+.history-section-header h3 {
+  color: #2c3e50;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.user-history {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 15px;
+  transition: all 0.3s ease;
+}
+
+.user-history:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.user-history-header {
+  color: #2c3e50;
+  font-weight: 600;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.history-table th {
+  background: #3498db;
+  color: white;
+  padding: 12px;
+  text-align: left;
+  font-weight: 500;
+}
+
+.history-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e9ecef;
+  vertical-align: middle;
+}
+
+.history-table tr:last-child td {
+  border-bottom: none;
+}
+
+.history-table tr:hover {
+  background-color: rgba(52, 152, 219, 0.03);
+}
+
 /* Responsive Adjustments */
+@media (max-width: 992px) {
+  #userBookList, #borrowedBooksList, #librarianBookList {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .hero-content h1 {
     font-size: 2rem;
+  }
+
+  .hero-section {
+    min-height: 80vh; /* Shorter for smaller screens */
+  }
+
+  .history-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .history-section-header h3 {
+    font-size: 1.3rem;
   }
 
   .hero-content p {
@@ -274,12 +463,22 @@ body {
     font-size: 1.5rem;
   }
 
-  #userBookList, #borrowedBooksList, #librarianBookList {
-    grid-template-columns: 1fr;
+  .book-card {
+    padding: 10px;
   }
 
-  .book-card img {
+  .book-cover {
     max-width: 120px;
+  }
+
+  .book-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .book-actions .btn {
+    flex: 1;
+    min-width: 100px;
   }
 }
 
@@ -298,5 +497,31 @@ body {
 
   .modal-title {
     font-size: 1.2rem;
+  }
+
+  .hero-section {
+    min-height: 60vh;
+  }
+
+  #userBookList, #borrowedBooksList, #librarianBookList {
+    grid-template-columns: 1fr;
+  }
+
+  .book-card {
+    padding: 10px;
+  }
+
+  .book-cover {
+    max-width: 100px;
+  }
+
+  .book-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .book-actions .btn {
+    width: 100%;
+    min-width: auto;
   }
 }
