@@ -21,6 +21,7 @@ async function loadLibraryData() {
       localStorage.setItem('users', JSON.stringify(data.users));
     }
 
+          // Initialize borrowing histories if they don't exist
     if (!localStorage.getItem('allBorrowingHistories')) {
       storeAllBorrowingHistories();
     }
@@ -72,13 +73,16 @@ function displayBooks() {
 
   const borrowedBooksList = document.getElementById('borrowedBooksList');
   if (borrowedBooksList) borrowedBooksList.innerHTML = '';
+   
 
+        // Sort books - available first
   const sortedBooks = [...books].sort((a, b) => {
     if (a.isAvailable && !b.isAvailable) return -1;
     if (!a.isAvailable && b.isAvailable) return 1;
     return a.title.localeCompare(b.title);
   });
-
+    
+       // Display sorted book
   sortedBooks.forEach(book => {
     const bookCard = createBookCard(book);
     
@@ -94,7 +98,8 @@ function displayBooks() {
       librarianBookList.appendChild(bookCard);
     }
   });
-
+     
+         // Search functionality
   document.getElementById('searchButton')?.addEventListener('click', () => {
     const searchTerm = document.getElementById('searchInput')?.value.trim().toLowerCase() || '';
     const filteredBooks = books.filter(book =>
@@ -111,6 +116,7 @@ function displayBooks() {
     displayBooks();
   });
 
+          // Show/hide borrowed books section
   const myBorrowedBooks = document.getElementById('myBorrowedBooks');
   if (myBorrowedBooks) {
     const hasBorrowedBooks = books.some(book => 
@@ -200,12 +206,15 @@ function displaySearchResults(filteredBooks) {
     return;
   }
 
+
+          // Sort search results - available first
   const sortedResults = [...filteredBooks].sort((a, b) => {
     if (a.isAvailable && !b.isAvailable) return -1;
     if (!a.isAvailable && b.isAvailable) return 1;
     return 0;
   });
-
+ 
+      // Render Books for User Based on Availability and Borrowing
   sortedResults.forEach(book => {
     const bookCard = createBookCard(book);
     
@@ -222,13 +231,15 @@ function displaySearchResults(filteredBooks) {
 }
 
 
-        // Display borrowing history
+        // Display borrowing history for librarian
 function displayBorrowingHistory() {
   const historySection = document.getElementById('borrowingHistory');
   if (!historySection) return;
 
   historySection.innerHTML = '';
 
+
+       // For regular users: Show their own history
   if (currentUser?.role === 'user') {
     const userHistory = books
       .filter(book => book.borrowHistory?.some(entry => entry.user === currentUser.username))
@@ -276,6 +287,8 @@ function displayBorrowingHistory() {
     `;
     
     historySection.innerHTML = historyHTML;
+
+       // For librarians: Show ALL users' histories
   } else if (currentUser?.role === 'librarian') {
     const allHistories = JSON.parse(localStorage.getItem('allBorrowingHistories')) || {};
     
@@ -322,7 +335,7 @@ function displayBorrowingHistory() {
   }
 }
 
-
+// to be read
         // Display public search results for non-logged-in users
 function displayPublicSearchResults(filteredBooks) {
   const publicSearchResults = document.getElementById('publicSearchResults');
@@ -442,6 +455,8 @@ function handleBookAction(bookId, action) {
   } else if (action === 'return' && !book.isAvailable && book.borrowedBy === currentUser.username) {
     book.isAvailable = true;
     
+
+    // to be read
     const historyEntry = book.borrowHistory?.find(
       entry => entry.user === currentUser.username && !entry.returnDate
     );
@@ -499,8 +514,9 @@ async function updateUI() {
   const publicSearchContainer = document.querySelector('.search-container');
   const publicSearchResults = document.getElementById('publicSearchResults');
 
+  
+              // Load users and books
   await loadLibraryData();
-
   if (currentUser) {
     if (heroSection) heroSection.style.display = 'none';
     if (dashboardSection) dashboardSection.style.display = 'block';
@@ -516,6 +532,9 @@ async function updateUI() {
     if (publicSearchContainer) publicSearchContainer.style.display = 'none';
     if (publicSearchResults) publicSearchResults.innerHTML = '';
 
+
+
+           // Only display books and history when logged in
     displayBooks();
   } else {
     if (heroSection) heroSection.style.display = 'flex';
@@ -639,11 +658,12 @@ document.getElementById('logoutButton')?.addEventListener('click', () => {
   if (loginError) loginError.style.display = 'none';
 });
 
-
+       // to be read
     // Initialize public search and tooltips when the page loads
 document.addEventListener('DOMContentLoaded', () => {
   setupPublicSearch();
-
+       
+       // to be read
    // Initialize Bootstrap tooltips
   const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
   tooltipTriggerList.map(element => new bootstrap.Tooltip(element));
