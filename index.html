@@ -17,8 +17,11 @@
             <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
                 <ul class="navbar-nav">
                     <li class="nav-item">
+                        <a href="#" class="btn btn-primary btn-login" data-bs-toggle="modal" data-bs-target="#loginModal" id="loginButton">Login</a>
                     </li>
-                    <button id="logoutButton" class="btn btn-danger">Logout</button>
+                    <li class="nav-item">
+                        <button id="logoutButton" class="btn btn-danger" style="display: none;">Logout</button>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -28,10 +31,14 @@
         <div class="hero-overlay"></div>
         <div class="hero-content">
             <h1>Hi! Welcome to Opnex Library Management Page</h1>
-            <p>Our goal is to serve you right with any book of your choice. register with us today and enjoy our service</p>
-            <div>
-                <a href="#" class="btn btn-login btn-primary" data-bs-toggle="modal" data-bs-target="#loginModal">Login</a>
+            <p>Search for your favorite books and register to borrow them!</p>
+            <div class="search-container">
+                <div class="input-group mb-3">
+                    <input id="publicSearchInput" type="text" class="form-control" placeholder="Search by title, author, or genre">
+                    <button id="publicSearchButton" class="btn btn-primary">Search</button>
+                </div>
             </div>
+            <div id="publicSearchResults" class="search-results mt-4"></div>
         </div>
     </div>
 
@@ -91,6 +98,40 @@
         </div>
     </div>
 
+    <div class="modal fade" id="editBookModal" tabindex="-1" aria-labelledby="editBookModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editBookModalLabel">Edit Book</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editBookForm">
+                        <input type="hidden" id="editBookId">
+                        <div class="mb-3">
+                            <label for="editBookTitle" class="form-label">Title</label>
+                            <input type="text" id="editBookTitle" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editBookAuthor" class="form-label">Author</label>
+                            <input type="text" id="editBookAuthor" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editBookGenre" class="form-label">Genre</label>
+                            <input type="text" id="editBookGenre" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editBookCover" class="form-label">Cover Image URL</label>
+                            <input type="text" id="editBookCover" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Save Changes</button>
+                    </form>
+                    <p id="editBookError" class="text-danger text-center mt-2" style="display: none;"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="dashboard-container" id="dashboardSection">
         <h2 id="welcomeMessage"></h2>
 
@@ -139,10 +180,8 @@
         </div>
     </div>
 
-
     <div id="borrowingHistory" class="mt-4"></div>
 
-    <!-- Single Alert Container (moved outside dashboard-container) -->
     <div id="alertContainer" class="alert-container"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

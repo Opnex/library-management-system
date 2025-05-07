@@ -1,9 +1,45 @@
-// Initialize state
+   // Initialize state
 let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
 let books = JSON.parse(localStorage.getItem('books')) || [];
 let users = JSON.parse(localStorage.getItem('users')) || [];
 
-// Store all borrowing histories in localStorage
+
+       // Load data from JSON
+async function loadLibraryData() {
+  try {
+    const response = await fetch('library-data.json');
+    const data = await response.json();
+    
+    if (books.length === 0) {
+      books = data.books;
+      localStorage.setItem('books', JSON.stringify(books));
+    } else {
+      books = JSON.parse(localStorage.getItem('books'));
+    }
+    
+    if (users.length === 0) {
+      localStorage.setItem('users', JSON.stringify(data.users));
+    }
+
+    if (!localStorage.getItem('allBorrowingHistories')) {
+      storeAllBorrowingHistories();
+    }
+  } catch (error) {
+    console.error('Error loading library data:', error);
+    showAlert('Failed to load book data. Some features may not work.', 'warning');
+    localStorage.setItem('books', JSON.stringify([]));
+    localStorage.setItem('users', JSON.stringify([]));
+    return { users: [], books: [] };
+  }
+}
+
+      // Save books to localStorage
+function saveBooks() {
+  localStorage.setItem('books', JSON.stringify(books));
+}
+
+
+      // Store all borrowing histories in localStorage
 function storeAllBorrowingHistories() {
   const allHistories = {};
 
@@ -25,49 +61,175 @@ function storeAllBorrowingHistories() {
   localStorage.setItem('allBorrowingHistories', JSON.stringify(allHistories));
 }
 
-// Load data from JSON
-async function loadLibraryData() {
-  try {
-    const response = await fetch('library-data.json');
-    const data = await response.json();
-    
-    if (books.length === 0) {
-      books = data.books;
-      localStorage.setItem('books', JSON.stringify(books));
-    } else {
-      books = JSON.parse(localStorage.getItem('books'));
-    }
-    
-    if (users.length === 0) {
-      localStorage.setItem('users', JSON.stringify(data.users));
-    }
 
-    // Initialize borrowing histories if they don't exist
-    if (!localStorage.getItem('allBorrowingHistories')) {
-      storeAllBorrowingHistories();
+
+        // Display books for user or librarian
+function displayBooks() {
+  const userBookList = document.getElementById('userBookList');
+  const librarianBookList = document.getElementById('librarianBookList');
+  if (userBookList) userBookList.innerHTML = '';
+  if (librarianBookList) librarianBookList.innerHTML = '';
+
+  const borrowedBooksList = document.getElementById('borrowedBooksList');
+  if (borrowedBooksList) borrowedBooksList.innerHTML = '';
+
+  const sortedBooks = [...books].sort((a, b) => {
+    if (a.isAvailable && !b.isAvailable) return -1;
+    if (!a.isAvailable && b.isAvailable) return 1;
+    return a.title.localeCompare(b.title);
+  });
+
+  sortedBooks.forEach(book => {
+    const bookCard = createBookCard(book);
+    
+    if (currentUser?.role === 'user' && userBookList) {
+      if (book.isAvailable) {
+        userBookList.appendChild(bookCard);
+      }
+      if (!book.isAvailable && book.borrowedBy === currentUser.username) {
+        const borrowedCard = createBookCard(book, true);
+        borrowedBooksList.appendChild(borrowedCard);
+      }
+    } else if (currentUser?.role === 'librarian' && librarianBookList) {
+      librarianBookList.appendChild(bookCard);
     }
-  } catch (error) {
-    console.error('Error loading library data:', error);
-    localStorage.setItem('books', JSON.stringify([]));
-    localStorage.setItem('users', JSON.stringify([]));
-    return { users: [], books: [] };
+  });
+
+  document.getElementById('searchButton')?.addEventListener('click', () => {
+    const searchTerm = document.getElementById('searchInput')?.value.trim().toLowerCase() || '';
+    const filteredBooks = books.filter(book =>
+      searchTerm === '' ||
+      book.title?.toLowerCase().includes(searchTerm) ||
+      book.author?.toLowerCase().includes(searchTerm) ||
+      book.genre?.toLowerCase().includes(searchTerm)
+    );
+    displaySearchResults(filteredBooks);
+  });
+
+  document.getElementById('clearSearch')?.addEventListener('click', () => {
+    document.getElementById('searchInput').value = '';
+    displayBooks();
+  });
+
+  const myBorrowedBooks = document.getElementById('myBorrowedBooks');
+  if (myBorrowedBooks) {
+    const hasBorrowedBooks = books.some(book => 
+      !book.isAvailable && book.borrowedBy === currentUser?.username
+    );
+    myBorrowedBooks.style.display = hasBorrowedBooks ? 'block' : 'none';
   }
+
+  setTimeout(() => displayBorrowingHistory(), 0);
 }
 
-// Save books to localStorage
-function saveBooks() {
-  localStorage.setItem('books', JSON.stringify(books));
+        // Create book card element
+function createBookCard(book, isBorrowed = false, isPublic = false) {
+  const bookCard = document.createElement('div');
+  bookCard.className = `book-card ${book.isAvailable ? 'available' : 'not-available'} ${
+    isBorrowed ? 'borrowed-card' : ''
+  }`;
+  
+  const borrowDate = book.borrowDate ? new Date(book.borrowDate) : null;
+  const dueDate = book.dueDate ? new Date(book.dueDate) : null;
+  const imageUrl = book.bookImage || book.coverImage || 'https://via.placeholder.com/150?text=No+Cover';
+  
+  bookCard.innerHTML = `
+    <div class="book-image-container">
+      <img src="${imageUrl}" alt="${book.title} cover" class="book-cover"
+        onerror="this.src='https://via.placeholder.com/150?text=No+Cover'">
+      ${!book.isAvailable ? `
+        <span class="book-status-badge">Borrowed</span>
+      ` : ''}
+    </div>
+    <div class="book-info">
+      <h4 class="book-title">${book.title}</h4>
+      <p class="book-author">by ${book.author}</p>
+      <div class="book-meta">
+        <span class="book-genre">${book.genre}</span>
+        <span class="badge ${book.isAvailable ? 'bg-success' : 'bg-danger'}">
+          ${book.isAvailable ? 'Available' : 'Borrowed'}
+        </span>
+      </div>
+      ${!book.isAvailable && borrowDate && dueDate && !isPublic ? `
+        <div class="borrow-dates">
+          <div class="date-item">
+            <span class="date-label">Borrowed:</span>
+            <span class="date-value">${borrowDate.toLocaleDateString()}</span>
+          </div>
+          <div class="date-item">
+            <span class="date-label">Due:</span>
+            <span class="date-value">${dueDate.toLocaleDateString()}</span>
+          </div>
+        </div>
+      ` : ''}
+      ${isPublic && !book.isAvailable ? `
+        <p class="text-muted mt-2">Please register to borrow this book.</p>
+      ` : ''}
+    </div>
+    <div class="book-actions">
+      ${isPublic ? `
+        <a href="#" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#registerModal">Register to Borrow</a>
+      ` : currentUser?.role === 'user' ? `
+        <button class="btn btn-sm ${book.isAvailable ? 'btn-primary' : 'btn-secondary'}"
+          onclick="handleBookAction(${book.id}, '${book.isAvailable ? 'borrow' : 'return'}')">
+          ${book.isAvailable ? 'Borrow' : 'Return'}
+        </button>
+      ` : currentUser?.role === 'librarian' ? `
+        <button class="btn btn-sm btn-danger delete-btn" style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.875rem;"
+          onclick="handleBookAction(${book.id}, 'delete')"
+          data-bs-toggle="tooltip" title="Delete this book">
+          <i class="bi bi-trash"></i> Delete
+        </button>
+      ` : ''}
+    </div>
+  `;
+  
+  return bookCard;
 }
 
-// Display borrowing history
+        // Display search results
+function displaySearchResults(filteredBooks) {
+  const userBookList = document.getElementById('userBookList');
+  const borrowedBooksList = document.getElementById('borrowedBooksList');
+  if (!userBookList || !borrowedBooksList) return;
+
+  userBookList.innerHTML = '';
+  borrowedBooksList.innerHTML = '';
+
+  if (filteredBooks.length === 0) {
+    userBookList.innerHTML = '<p class="text-muted">No books found matching your search.</p>';
+    return;
+  }
+
+  const sortedResults = [...filteredBooks].sort((a, b) => {
+    if (a.isAvailable && !b.isAvailable) return -1;
+    if (!a.isAvailable && b.isAvailable) return 1;
+    return 0;
+  });
+
+  sortedResults.forEach(book => {
+    const bookCard = createBookCard(book);
+    
+    if (currentUser?.role === 'user' && userBookList) {
+      if (book.isAvailable) {
+        userBookList.appendChild(bookCard);
+      }
+      if (!book.isAvailable && book.borrowedBy === currentUser.username) {
+        const borrowedCard = createBookCard(book, true);
+        borrowedBooksList.appendChild(borrowedCard);
+      }
+    }
+  });
+}
+
+
+        // Display borrowing history
 function displayBorrowingHistory() {
   const historySection = document.getElementById('borrowingHistory');
   if (!historySection) return;
 
-  // Clear previous content
   historySection.innerHTML = '';
 
-  // For regular users: Show their own history
   if (currentUser?.role === 'user') {
     const userHistory = books
       .filter(book => book.borrowHistory?.some(entry => entry.user === currentUser.username))
@@ -115,9 +277,7 @@ function displayBorrowingHistory() {
     `;
     
     historySection.innerHTML = historyHTML;
-  }
-  // For librarians: Show ALL users' histories
-  else if (currentUser?.role === 'librarian') {
+  } else if (currentUser?.role === 'librarian') {
     const allHistories = JSON.parse(localStorage.getItem('allBorrowingHistories')) || {};
     
     const historyHTML = `
@@ -163,170 +323,84 @@ function displayBorrowingHistory() {
   }
 }
 
-// Display books for user or librarian
-function displayBooks() {
-  const userBookList = document.getElementById('userBookList');
-  const librarianBookList = document.getElementById('librarianBookList');
-  if (userBookList) userBookList.innerHTML = '';
-  if (librarianBookList) librarianBookList.innerHTML = '';
 
-  const borrowedBooksList = document.getElementById('borrowedBooksList');
-  if (borrowedBooksList) borrowedBooksList.innerHTML = '';
-
-  // Sort books - available first, then by title
-  const sortedBooks = [...books].sort((a, b) => {
-    // Available books first
-    if (a.isAvailable && !b.isAvailable) return -1;
-    if (!a.isAvailable && b.isAvailable) return 1;
-    // Then sort by title
-    return a.title.localeCompare(b.title);
-  });
-
-  // Display sorted books
-  sortedBooks.forEach(book => {
-    const bookCard = createBookCard(book);
-    
-    if (currentUser?.role === 'user' && userBookList) {
-      if (book.isAvailable) {
-        userBookList.appendChild(bookCard);
-      }
-
-      if (!book.isAvailable && book.borrowedBy === currentUser.username) {
-        const borrowedCard = createBookCard(book, true);
-        borrowedBooksList.appendChild(borrowedCard);
-      }
-    } else if (currentUser?.role === 'librarian' && librarianBookList) {
-      librarianBookList.appendChild(bookCard);
-    }
-  });
-
-  // Search functionality
-  document.getElementById('searchButton')?.addEventListener('click', () => {
-    const searchTerm = document.getElementById('searchInput')?.value.trim().toLowerCase() || '';
-    const filteredBooks = books.filter(book =>
-      searchTerm === '' ||
-      book.title?.toLowerCase().includes(searchTerm) ||
-      book.author?.toLowerCase().includes(searchTerm) ||
-      book.genre?.toLowerCase().includes(searchTerm)
-    );
-    displaySearchResults(filteredBooks);
-  });
-
-  document.getElementById('clearSearch')?.addEventListener('click', () => {
-    document.getElementById('searchInput').value = '';
-    displayBooks();
-  });
-
-  // Show/hide borrowed books section
-  const myBorrowedBooks = document.getElementById('myBorrowedBooks');
-  if (myBorrowedBooks) {
-    const hasBorrowedBooks = books.some(book => 
-      !book.isAvailable && book.borrowedBy === currentUser?.username
-    );
-    myBorrowedBooks.style.display = hasBorrowedBooks ? 'block' : 'none';
-  }
-
-  // Display history AFTER books (with slight delay to ensure DOM is ready)
-  setTimeout(() => displayBorrowingHistory(), 0);
-}
-
-// Create book card element
-function createBookCard(book, isBorrowed = false) {
-  const bookCard = document.createElement('div');
-  bookCard.className = `book-card ${book.isAvailable ? 'available' : 'not-available'} ${
-    isBorrowed ? 'borrowed-card' : ''
-  }`;
-  
-  const borrowDate = book.borrowDate ? new Date(book.borrowDate) : null;
-  const dueDate = book.dueDate ? new Date(book.dueDate) : null;
-  
-  bookCard.innerHTML = `
-    <div class="book-image-container">
-      <img src="${book.coverImage}" alt="${book.title} cover" class="book-cover"
-        onerror="this.src='https://images.unsplash.com/photo-1544716278-ca5e3f4ebf0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80'">
-      ${!book.isAvailable ? `
-        <span class="book-status-badge">Borrowed</span>
-      ` : ''}
-    </div>
-    <div class="book-info">
-      <h4 class="book-title">${book.title}</h4>
-      <p class="book-author">by ${book.author}</p>
-      <div class="book-meta">
-        <span class="book-genre">${book.genre}</span>
-        <span class="badge ${book.isAvailable ? 'bg-success' : 'bg-danger'}">
-          ${book.isAvailable ? 'Available' : 'Borrowed'}
-        </span>
-      </div>
-      ${!book.isAvailable && borrowDate && dueDate ? `
-        <div class="borrow-dates">
-          <div class="date-item">
-            <span class="date-label">Borrowed:</span>
-            <span class="date-value">${borrowDate.toLocaleDateString()}</span>
-          </div>
-          <div class="date-item">
-            <span class="date-label">Due:</span>
-            <span class="date-value">${dueDate.toLocaleDateString()}</span>
-          </div>
-        </div>
-      ` : ''}
-    </div>
-    <div class="book-actions">
-      ${currentUser?.role === 'user' ? `
-        <button class="btn btn-sm ${book.isAvailable ? 'btn-primary' : 'btn-secondary'}"
-          onclick="handleBookAction(${book.id}, '${book.isAvailable ? 'borrow' : 'return'}')">
-          ${book.isAvailable ? 'Borrow' : 'Return'}
-        </button>
-      ` : ''}
-      ${currentUser?.role === 'librarian' ? `
-        <button class="btn btn-sm btn-danger"
-          onclick="handleBookAction(${book.id}, 'delete')"
-          data-bs-toggle="tooltip" title="Delete this book">
-          <i class="bi bi-trash"></i>
-        </button>
-      ` : ''}
-    </div>
-  `;
-  
-  return bookCard;
-}
-
-// Display search results
-function displaySearchResults(filteredBooks) {
-  const userBookList = document.getElementById('userBookList');
-  const borrowedBooksList = document.getElementById('borrowedBooksList');
-  if (!userBookList || !borrowedBooksList) return;
-
-  userBookList.innerHTML = '';
-  borrowedBooksList.innerHTML = '';
-
-  if (filteredBooks.length === 0) {
-    userBookList.innerHTML = '<p class="text-muted">No books found matching your search.</p>';
+        // Display public search results for non-logged-in users
+function displayPublicSearchResults(filteredBooks) {
+  const publicSearchResults = document.getElementById('publicSearchResults');
+  console.log('Displaying public search results:', { publicSearchResults, filteredBooks });
+  if (!publicSearchResults) {
+    console.error('Public search results container not found');
     return;
   }
 
-  // Sort search results - available first
-  const sortedResults = [...filteredBooks].sort((a, b) => {
+  publicSearchResults.innerHTML = '';
+
+  if (!filteredBooks || filteredBooks.length === 0) {
+    publicSearchResults.innerHTML = '<p class="text-muted">No books found. Try a different search term or check back later.</p>';
+    return;
+  }
+
+  const validBooks = filteredBooks.filter(book => book.title && book.author && book.genre);
+  if (validBooks.length === 0) {
+    publicSearchResults.innerHTML = '<p class="text-muted">No valid books found in the library.</p>';
+    return;
+  }
+
+  const sortedResults = [...validBooks].sort((a, b) => {
     if (a.isAvailable && !b.isAvailable) return -1;
     if (!a.isAvailable && b.isAvailable) return 1;
     return 0;
   });
 
   sortedResults.forEach(book => {
-    const bookCard = createBookCard(book);
-    
-    if (currentUser?.role === 'user' && userBookList) {
-      if (book.isAvailable) {
-        userBookList.appendChild(bookCard);
-      }
-      if (!book.isAvailable && book.borrowedBy === currentUser.username) {
-        const borrowedCard = createBookCard(book, true);
-        borrowedBooksList.appendChild(borrowedCard);
-      }
-    }
+    const bookCard = createBookCard(book, false, true);
+    publicSearchResults.appendChild(bookCard);
   });
 }
 
-// Handle book actions
+
+        // Handle public search
+function setupPublicSearch() {
+  const publicSearchButton = document.getElementById('publicSearchButton');
+  const publicSearchInput = document.getElementById('publicSearchInput');
+  console.log('Public search setup:', { publicSearchButton, publicSearchInput });
+
+  if (publicSearchButton && publicSearchInput) {
+    publicSearchButton.addEventListener('click', async () => {
+      if (currentUser) return;
+      await loadLibraryData();
+      const searchTerm = publicSearchInput.value.trim().toLowerCase();
+      console.log('Public search term:', searchTerm);
+      const filteredBooks = books.filter(book =>
+        searchTerm === '' ||
+        book.title?.toLowerCase().includes(searchTerm) ||
+        book.author?.toLowerCase().includes(searchTerm) ||
+        book.genre?.toLowerCase().includes(searchTerm)
+      );
+      displayPublicSearchResults(filteredBooks);
+    });
+
+    publicSearchInput.addEventListener('keypress', async (e) => {
+      if (e.key === 'Enter' && !currentUser) {
+        await loadLibraryData();
+        const searchTerm = publicSearchInput.value.trim().toLowerCase();
+        console.log('Public search term (Enter):', searchTerm);
+        const filteredBooks = books.filter(book =>
+          searchTerm === '' ||
+          book.title?.toLowerCase().includes(searchTerm) ||
+          book.author?.toLowerCase().includes(searchTerm) ||
+          book.genre?.toLowerCase().includes(searchTerm)
+        );
+      displayPublicSearchResults(filteredBooks);
+      }
+    });
+  } else {
+    console.error('Public search elements not found:', { publicSearchButton, publicSearchInput });
+  }
+}
+
+
+        // Handle book actions
 function handleBookAction(bookId, action) {
   const book = books.find(b => b.id === bookId);
   if (!book) return;
@@ -366,11 +440,9 @@ function handleBookAction(bookId, action) {
     storeAllBorrowingHistories();
     displayBooks();
     showAlert(`You borrowed "${book.title}". Due on ${dueDate.toLocaleDateString()}`, 'success');
-  }
-  else if (action === 'return' && !book.isAvailable && book.borrowedBy === currentUser.username) {
+  } else if (action === 'return' && !book.isAvailable && book.borrowedBy === currentUser.username) {
     book.isAvailable = true;
     
-    // Update history
     const historyEntry = book.borrowHistory?.find(
       entry => entry.user === currentUser.username && !entry.returnDate
     );
@@ -389,7 +461,8 @@ function handleBookAction(bookId, action) {
   }
 }
 
-// Show alert notification
+
+        // Show alert notification
 function showAlert(message, type = 'info') {
   const alertContainer = document.getElementById('alertContainer');
   if (!alertContainer) {
@@ -407,14 +480,14 @@ function showAlert(message, type = 'info') {
 
   alertContainer.appendChild(alert);
 
-  // Auto-dismiss after 3 seconds
   setTimeout(() => {
     alert.classList.remove('show');
     setTimeout(() => alert.remove(), 100);
   }, 3000);
 }
 
-// Show/hide sections based on login state
+
+      // Show/hide sections based on login state
 async function updateUI() {
   const heroSection = document.getElementById('heroSection');
   const dashboardSection = document.getElementById('dashboardSection');
@@ -422,9 +495,11 @@ async function updateUI() {
   const librarianDashboard = document.getElementById('librarianDashboard');
   const welcomeMessage = document.getElementById('welcomeMessage');
   const logoutButton = document.getElementById('logoutButton');
+  const loginButton = document.getElementById('loginButton');
   const historySection = document.getElementById('borrowingHistory');
+  const publicSearchContainer = document.querySelector('.search-container');
+  const publicSearchResults = document.getElementById('publicSearchResults');
 
-  // Load users and books
   await loadLibraryData();
 
   if (currentUser) {
@@ -438,8 +513,10 @@ async function updateUI() {
       librarianDashboard.style.display = currentUser.role === 'librarian' ? 'block' : 'none';
     }
     if (logoutButton) logoutButton.style.display = 'block';
+    if (loginButton) loginButton.style.display = 'none';
+    if (publicSearchContainer) publicSearchContainer.style.display = 'none';
+    if (publicSearchResults) publicSearchResults.innerHTML = '';
 
-    // Only display books and history when logged in
     displayBooks();
   } else {
     if (heroSection) heroSection.style.display = 'flex';
@@ -447,11 +524,14 @@ async function updateUI() {
     if (userDashboard) userDashboard.style.display = 'none';
     if (librarianDashboard) librarianDashboard.style.display = 'none';
     if (logoutButton) logoutButton.style.display = 'none';
-    if (historySection) historySection.innerHTML = ''; // Clear borrowing history on landing page
+    if (loginButton) loginButton.style.display = 'block';
+    if (publicSearchContainer) publicSearchContainer.style.display = 'block';
+    if (historySection) historySection.innerHTML = '';
   }
 }
 
-// Handle login
+
+       // Handle login
 document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const username = document.getElementById('loginUsername').value.trim();
@@ -467,7 +547,7 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
     if (loginError) loginError.style.display = 'none';
     const loginModal = document.getElementById('loginModal');
     if (loginModal) bootstrap.Modal.getInstance(loginModal)?.hide();
-    updateUI();
+    await updateUI();
   } else {
     if (loginError) {
       loginError.textContent = 'Invalid username or password.';
@@ -476,7 +556,8 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
   }
 });
 
-// Handle registration
+
+      // Handle registration
 document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const username = document.getElementById('registerUsername').value.trim();
@@ -510,7 +591,6 @@ document.getElementById('registerForm')?.addEventListener('submit', async (e) =>
   if (registerModal) bootstrap.Modal.getInstance(registerModal)?.hide();
   showAlert('Registration successful! You can now log in.', 'success');
 
-  // Automatically switch back to the login modal
   const loginModal = document.getElementById('loginModal');
   if (loginModal) {
     const bsLoginModal = bootstrap.Modal.getOrCreateInstance(loginModal);
@@ -518,7 +598,8 @@ document.getElementById('registerForm')?.addEventListener('submit', async (e) =>
   }
 });
 
-// Handle add book form
+
+      // Handle add book form
 document.getElementById('addBookForm')?.addEventListener('submit', (e) => {
   e.preventDefault();
   if (currentUser?.role !== 'librarian') return;
@@ -526,7 +607,7 @@ document.getElementById('addBookForm')?.addEventListener('submit', (e) => {
   const title = document.getElementById('bookTitle').value.trim();
   const author = document.getElementById('bookAuthor').value.trim();
   const genre = document.getElementById('bookGenre').value.trim();
-  const coverImage = document.getElementById('bookCover').value.trim() || 'https://images.unsplash.com/photo-1544716278-ca5e3f4ebf0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80';
+  const bookImage = document.getElementById('bookCover').value.trim() || 'https://via.placeholder.com/150?text=No+Cover';
 
   if (title && author && genre) {
     const newId = books.length ? Math.max(...books.map(b => b.id)) + 1 : 1;
@@ -536,7 +617,7 @@ document.getElementById('addBookForm')?.addEventListener('submit', (e) => {
       author, 
       genre, 
       isAvailable: true, 
-      coverImage,
+      bookImage,
       borrowHistory: [] 
     });
     saveBooks();
@@ -547,7 +628,8 @@ document.getElementById('addBookForm')?.addEventListener('submit', (e) => {
   }
 });
 
-// Handle logout
+
+    // Handle logout
 document.getElementById('logoutButton')?.addEventListener('click', () => {
   currentUser = null;
   localStorage.removeItem('currentUser');
@@ -558,5 +640,17 @@ document.getElementById('logoutButton')?.addEventListener('click', () => {
   if (loginError) loginError.style.display = 'none';
 });
 
-// Initial UI update
-updateUI();
+
+    // Initialize public search and tooltips when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+  setupPublicSearch();
+
+   // Initialize Bootstrap tooltips
+  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  tooltipTriggerList.map(element => new bootstrap.Tooltip(element));
+});
+
+    // Initial UI update
+document.addEventListener('DOMContentLoaded', () => {
+  updateUI();
+});
