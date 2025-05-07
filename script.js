@@ -131,12 +131,11 @@ function createBookCard(book, isBorrowed = false, isPublic = false) {
   
   const borrowDate = book.borrowDate ? new Date(book.borrowDate) : null;
   const dueDate = book.dueDate ? new Date(book.dueDate) : null;
-  const imageUrl = book.bookImage || book.coverImage || 'https://via.placeholder.com/150?text=No+Cover';
+  const imageUrl = book.bookImage || book.coverImage ;
   
   bookCard.innerHTML = `
     <div class="book-image-container">
-      <img src="${imageUrl}" alt="${book.title} cover" class="book-cover"
-        onerror="this.src='https://via.placeholder.com/150?text=No+Cover'">
+      <img src="${imageUrl}" alt="${book.title} cover" class="book-cover">
       ${!book.isAvailable ? `
         <span class="book-status-badge">Borrowed</span>
       ` : ''}
@@ -607,7 +606,7 @@ document.getElementById('addBookForm')?.addEventListener('submit', (e) => {
   const title = document.getElementById('bookTitle').value.trim();
   const author = document.getElementById('bookAuthor').value.trim();
   const genre = document.getElementById('bookGenre').value.trim();
-  const bookImage = document.getElementById('bookCover').value.trim() || 'https://via.placeholder.com/150?text=No+Cover';
+  const bookImage = document.getElementById('bookCover').value.trim() ;
 
   if (title && author && genre) {
     const newId = books.length ? Math.max(...books.map(b => b.id)) + 1 : 1;
