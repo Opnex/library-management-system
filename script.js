@@ -75,7 +75,7 @@ function displayBooks() {
   if (borrowedBooksList) borrowedBooksList.innerHTML = '';
    
 
-        // Sort books - available first
+        // Sort books
   const sortedBooks = [...books].sort((a, b) => {
     if (a.isAvailable && !b.isAvailable) return -1;
     if (!a.isAvailable && b.isAvailable) return 1;
@@ -231,7 +231,7 @@ function displaySearchResults(filteredBooks) {
 }
 
 
-        // Display borrowing history for librarian
+        // Display borrowing history for librariann
 function displayBorrowingHistory() {
   const historySection = document.getElementById('borrowingHistory');
   if (!historySection) return;
@@ -335,7 +335,7 @@ function displayBorrowingHistory() {
   }
 }
 
-// to be read
+
         // Display public search results for non-logged-in users
 function displayPublicSearchResults(filteredBooks) {
   const publicSearchResults = document.getElementById('publicSearchResults');
@@ -658,12 +658,12 @@ document.getElementById('logoutButton')?.addEventListener('click', () => {
   if (loginError) loginError.style.display = 'none';
 });
 
-       // to be read
+     
     // Initialize public search and tooltips when the page loads
 document.addEventListener('DOMContentLoaded', () => {
   setupPublicSearch();
        
-       // to be read
+
    // Initialize Bootstrap tooltips
   const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
   tooltipTriggerList.map(element => new bootstrap.Tooltip(element));
