@@ -125,7 +125,7 @@ function displayBooks() {
     myBorrowedBooks.style.display = hasBorrowedBooks ? 'block' : 'none';
   }
 
-  setTimeout(() => displayBorrowingHistory(), 0);
+  setTimeout(() => displayBorrowingHistory());
 }
 
         // Create book card element
@@ -231,7 +231,7 @@ function displaySearchResults(filteredBooks) {
 }
 
 
-        // Display borrowing history for librariann
+        // Display borrowing history
 function displayBorrowingHistory() {
   const historySection = document.getElementById('borrowingHistory');
   if (!historySection) return;
@@ -239,7 +239,7 @@ function displayBorrowingHistory() {
   historySection.innerHTML = '';
 
 
-       // For regular users: Show their own history
+       // For regular users: 
   if (currentUser?.role === 'user') {
     const userHistory = books
       .filter(book => book.borrowHistory?.some(entry => entry.user === currentUser.username))
@@ -288,7 +288,7 @@ function displayBorrowingHistory() {
     
     historySection.innerHTML = historyHTML;
 
-       // For librarians: Show ALL users' histories
+       // For librarians: 
   } else if (currentUser?.role === 'librarian') {
     const allHistories = JSON.parse(localStorage.getItem('allBorrowingHistories')) || {};
     
@@ -456,7 +456,7 @@ function handleBookAction(bookId, action) {
     book.isAvailable = true;
     
 
-    // to be read
+    
     const historyEntry = book.borrowHistory?.find(
       entry => entry.user === currentUser.username && !entry.returnDate
     );
@@ -535,6 +535,10 @@ async function updateUI() {
 
 
            // Only display books and history when logged in
+
+    if (currentUser.role === 'librarian') {
+    displayLibraryStatistics();
+  }
     displayBooks();
   } else {
     if (heroSection) heroSection.style.display = 'flex';
@@ -673,3 +677,82 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('DOMContentLoaded', () => {
   updateUI();
 });
+
+
+function getLibraryStatistics() {
+  const totalBooks = books.length;
+  const availableBooks = books.filter(book => book.isAvailable).length;
+  const borrowedBooks = totalBooks - availableBooks;
+  
+  // Find most borrowed book
+  let mostBorrowedBook = null;
+  let maxBorrows = 0;
+  
+  books.forEach(book => {
+    const borrowCount = book.borrowHistory?.length || 0;
+    if (borrowCount > maxBorrows) {
+      maxBorrows = borrowCount;
+      mostBorrowedBook = book;
+    }
+  });
+  
+  return {
+    totalBooks,
+    availableBooks,
+    borrowedBooks,
+    mostBorrowedBook: mostBorrowedBook ? {
+      title: mostBorrowedBook.title,
+      borrowCount: maxBorrows
+    } : null
+  };
+}
+
+function displayLibraryStatistics() {
+  const statsContainer = document.getElementById('libraryStatistics');
+  
+  // Only display if we're on the librarian dashboard and user is a librarian
+  if (!statsContainer || currentUser?.role !== 'librarian') {
+    return;
+  }
+
+  const stats = getLibraryStatistics();
+  
+  statsContainer.innerHTML = `
+    <div class="row g-4">
+      <div class="col-md-3">
+        <div class="stat-card card h-100">
+          <div class="card-body">
+            <h5 class="card-title">Total Books</h5>
+            <p class="stat-value">${stats.totalBooks}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card card h-100">
+          <div class="card-body">
+            <h5 class="card-title">Available</h5>
+            <p class="stat-value text-success">${stats.availableBooks}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card card h-100">
+          <div class="card-body">
+            <h5 class="card-title">Borrowed</h5>
+            <p class="stat-value text-warning">${stats.borrowedBooks}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card card h-100">
+          <div class="card-body">
+            <h5 class="card-title">Most Popular</h5>
+            <p class="stat-value">${stats.mostBorrowedBook ? 
+              `${stats.mostBorrowedBook.title} (${stats.mostBorrowedBook.borrowCount} borrows)` : 
+              'No data'}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
