@@ -678,13 +678,16 @@ document.addEventListener('DOMContentLoaded', () => {
   updateUI();
 });
 
+ 
 
+      // statitics for librarian dashboard
 function getLibraryStatistics() {
   const totalBooks = books.length;
   const availableBooks = books.filter(book => book.isAvailable).length;
   const borrowedBooks = totalBooks - availableBooks;
   
-  // Find most borrowed book
+  
+     // Find most borrowed book
   let mostBorrowedBook = null;
   let maxBorrows = 0;
   
@@ -709,8 +712,6 @@ function getLibraryStatistics() {
 
 function displayLibraryStatistics() {
   const statsContainer = document.getElementById('libraryStatistics');
-  
-  // Only display if we're on the librarian dashboard and user is a librarian
   if (!statsContainer || currentUser?.role !== 'librarian') {
     return;
   }
